@@ -1,5 +1,5 @@
 const unsigned MODE_MAIN =  1;
-const unsigned MODE_CONNECTED 2;
+const unsigned MODE_CONNECTED = 2;
 
 const unsigned DOOR_OPEN = 0;
 const unsigned DOOR_CLOSE = 1;
@@ -20,11 +20,23 @@ void loop(){
     switch (MODE)
     {
     case MODE_MAIN:
-        /* code */
+        main();
+        break;
+
+    case MODE_CONNECTED:
+        connected();
         break;
     
     default:
         break;
     }
+
+}
+
+void main(){
+
+}
+
+void connected(){
 
 }
