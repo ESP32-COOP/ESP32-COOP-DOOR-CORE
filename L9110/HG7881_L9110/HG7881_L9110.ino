@@ -9,9 +9,9 @@
 
 #define IN2 26 //B1-A
 #define IN1 25 //A1-A
-
+int count =1;
 long prevT;
-int target = 372*10;//372
+int target = 372;//372
 float kp = 8;
 float kd = 1;
 float ki = 0.01;
@@ -23,17 +23,32 @@ void setup()
    
    
     motor1.init(kp, ki, kd);
-	motor1.set_target(target);
+	
 }
 void loop()
 {
     //Serial.println(motor1.target_reached() );
-    motor1.start();
-    // Check if the target position is reached
-  if (motor1.target_reached()) {
-    // Stop the motor
-     delay(1000); // Wait for 1 second
-    motor1.turn_off();
-  }
     
+    // Check if the target position is reached
+    
+    noInterrupts(); // disable interrupts
+    Serial.print("hello");
+    Serial.print("hello");
+    Serial.print("hello");Serial.print("hello");
+    Serial.print("hello");
+    interrupts(); // re-enable interrupts
+
+    motor1.set_target(target*count);
+    motor1.start();
+    
+  while (!motor1.target_reached()) {
+    motor1.start();
+     
+  }
+  delay(1000); // Wait for 1 second
+    //motor1.turn_off();
+    motor1.set_target(target);
+    count++;
+
+
 }
