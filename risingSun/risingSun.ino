@@ -24,7 +24,7 @@ int minValue = analogValue;
 int maxValue = analogValue;
 
 //settings door
-int doorWantedStatus = 0;
+int doorWantedStatus = 1;
 float doorNbTurn = 1;
 
 //settings close
@@ -70,7 +70,8 @@ void setup() {
   BLE.addService(service);
   dateCharacteristic.writeValue(0);
   lightCharacteristic.writeValue(0);
-  doorCharacteristic.writeValue(0);
+  uint8_t initialValue[] = {10, 1};
+  doorCharacteristic.writeValue(initialValue, sizeof(initialValue));
 
 
   // start advertising
@@ -173,10 +174,10 @@ void manageSettingsDoor() {
     doorNbTurn = doorCharacteristic.value()[0] / 10;
     doorWantedStatus = doorCharacteristic.value()[1];
 
-    if (doorWantedStatus == 0) {
+    if (doorWantedStatus == 0 && doorStaus != doorWantedStatus ) {
       Serial.println(oneTurn * doorNbTurn); // * doorNbTurn);
       motor1.set_target(oneTurn * doorNbTurn); // * doorNbTurn);
-    } else if (doorWantedStatus == 1) {
+    } else if (doorWantedStatus == 1 && doorStaus != doorWantedStatus) {
       Serial.println(oneTurn * 0); // * doorNbTurn*-1 );
       motor1.set_target(oneTurn * 0); // * doorNbTurn * -1);
 
@@ -187,6 +188,8 @@ void manageSettingsDoor() {
     }
     delay(1000); // Wait for 1 second
     motor1.turn_off();
+    
+    doorStaus = doorWantedStatus;
 
 
   } else {
