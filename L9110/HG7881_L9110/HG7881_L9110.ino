@@ -19,7 +19,7 @@ float ki = 0.01;
 motor motor1 = motor(ENCA, ENCB, IN1, IN2, 0, 50, 100); // Set upper limit to 100
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
    
    
     motor1.init(kp, ki, kd);
@@ -27,18 +27,17 @@ void setup()
 }
 void loop()
 {
-    //Serial.println(motor1.target_reached() );
-    
-    // Check if the target position is reached
-    
-    noInterrupts(); // disable interrupts
-    Serial.print("hello");
-    Serial.print("hello");
-    Serial.print("hello");Serial.print("hello");
-    Serial.print("hello");
-    interrupts(); // re-enable interrupts
+   noInterrupts();
+  Serial.println("hello");
+  interrupts();
 
-    motor1.set_target(target*count);
+
+    if (count%2 == 0){
+      motor1.set_target(0);
+    }else{
+      motor1.set_target(target);
+    }
+    
     motor1.start();
     
   while (!motor1.target_reached()) {
@@ -47,7 +46,7 @@ void loop()
   }
   delay(1000); // Wait for 1 second
     //motor1.turn_off();
-    motor1.set_target(target);
+
     count++;
 
 

@@ -45,11 +45,11 @@ int doorStaus = 1;
 float kp = 8;
 float kd = 1;
 float ki = 0.01;
-motor motor1 = motor(ENCA, ENCB, IN1, IN2, 0, 80, 150); // Set upper limit to 100
+motor motor1 = motor(ENCA, ENCB, IN1, IN2, 0, 50, 100); // Set upper limit to 100
 
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   rtc.setTime(1680108200);
   while (!Serial);
 
@@ -183,9 +183,13 @@ void manageSettingsDoor() {
 
     }
     motor1.start();
+
     while (!motor1.target_reached()) {
+      
       motor1.start();
+      
     }
+    
     delay(1000); // Wait for 1 second
     motor1.turn_off();
     
