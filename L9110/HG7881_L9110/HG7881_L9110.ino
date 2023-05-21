@@ -28,7 +28,7 @@ void setup()
 void loop()
 {
    noInterrupts();
-  Serial.println("hello");
+  Serial.println("step1");
   interrupts();
 
 
@@ -37,17 +37,29 @@ void loop()
     }else{
       motor1.set_target(target);
     }
-    
+
+
+     noInterrupts();
+  Serial.println("step2");
+  interrupts();
+
+  
     motor1.start();
     
   while (!motor1.target_reached()) {
     motor1.start();
+
      
   }
+   noInterrupts();
+  Serial.println("step3");
+
+  interrupts();
   delay(1000); // Wait for 1 second
     //motor1.turn_off();
 
     count++;
+    
 
 
 }

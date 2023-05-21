@@ -26,6 +26,7 @@ int maxValue = analogValue;
 //settings door
 int doorWantedStatus = 1;
 float doorNbTurn = 1;
+int target;
 
 //settings close
 int doorCloseMode = 0;
@@ -110,13 +111,10 @@ void loop() {
     while (central.connected()) {
       // if the remote device wrote to the characteristic,
       // use the value to control the LED:
-      delay(500);
+      //delay(500);
 
-      manageDate();
-      manageLight();
       manageSettingsDoor();
-      manageSettingsClose();
-      manageSettingsOpen();
+
 
 
 
@@ -136,52 +134,6 @@ void loop() {
 
 }
 
-void manageSettingsOpen() {
-  if (doorOpenCharacteristic.written() ) {
-    
-    noInterrupts();
-      Serial.println("update Door Open settings");
-    Serial.print(doorOpenCharacteristic.value()[0]);
-    Serial.print(";");
-    Serial.print(doorOpenCharacteristic.value()[1]);
-    Serial.print(";");
-    Serial.print(doorOpenCharacteristic.value()[2]);
-    Serial.print(";");
-    Serial.println(doorOpenCharacteristic.value()[3]);
-      interrupts();
-    doorOpenMode = doorOpenCharacteristic.value()[0];
-    doorOpenLightThreshold = doorOpenCharacteristic.value()[1];
-    doorOpenTimeH = doorOpenCharacteristic.value()[2];
-    doorOpenTImeM = doorOpenCharacteristic.value()[3];
-
-  } else {
-    //todo
-  }
-}
-
-void manageSettingsClose() {
-  if (doorCloseCharacteristic.written() ) {
-    
-    noInterrupts();
-      Serial.println("update Door Close settings");
-    Serial.print(doorCloseCharacteristic.value()[0]);
-    Serial.print(";");
-    Serial.print(doorCloseCharacteristic.value()[1]);
-    Serial.print(";");
-    Serial.print(doorCloseCharacteristic.value()[2]);
-    Serial.print(";");
-    Serial.println(doorCloseCharacteristic.value()[3]);
-      interrupts();
-    doorCloseMode = doorCloseCharacteristic.value()[0];
-    doorCloseLightThreshold = doorCloseCharacteristic.value()[1];
-    doorCloseTimeH = doorCloseCharacteristic.value()[2];
-    doorCloseTImeM = doorCloseCharacteristic.value()[3];
-
-  } else {
-    //todo
-  }
-}
-
 
 void manageSettingsDoor() {
   if (doorCharacteristic.written() ) {
@@ -191,22 +143,26 @@ void manageSettingsDoor() {
     Serial.print(doorCharacteristic.value()[0]);
     Serial.print(";");
     Serial.println(doorCharacteristic.value()[1]);
+    Serial.println("doorNbTurn");
       interrupts();
     doorNbTurn = doorCharacteristic.value()[0] / 10;
     doorWantedStatus = doorCharacteristic.value()[1];
-
+    
     if (doorWantedStatus == 0 && doorStaus != doorWantedStatus ) {
+      target = (int) oneTurn * doorNbTurn;
       noInterrupts();
-      Serial.println(oneTurn * doorNbTurn); // * doorNbTurn);
+      
+      Serial.println(target); // * doorNbTurn);
       interrupts();
       
-      motor1.set_target(oneTurn * doorNbTurn); // * doorNbTurn);
+      motor1.set_target(target); // * doorNbTurn);
     } else if (doorWantedStatus == 1 && doorStaus != doorWantedStatus) {
-      
+      target = (int) oneTurn * 0;
       noInterrupts();
-      Serial.println(oneTurn * 0); // * doorNbTurn*-1 );
+      
+      Serial.println(target); // * doorNbTurn*-1 );
       interrupts();
-      motor1.set_target(oneTurn * 0); // * doorNbTurn * -1);
+      motor1.set_target(target); // * doorNbTurn * -1);
 
     }
     motor1.start();
@@ -227,67 +183,6 @@ void manageSettingsDoor() {
     //motor1.start();
 
   }
-}
-
-void manageLight() {
-  if (lightCharacteristic.written() && lightCharacteristic.value()[3] != 0x00) {
-    analogValue = random(10, 1000);
-    minValue = analogValue;
-    maxValue = analogValue;
-    Serial.println("reset light");
-
-
-  } else {
-    analogValue = random(10, 1000);
-    minValue = min(analogValue, minValue);
-    maxValue = max(analogValue, maxValue);
-  }
-  /*
-    Serial.print(" value ");
-    Serial.print(analogValue);
-    Serial.print(" minValue ");
-    Serial.print(minValue);
-    Serial.print(" maxValue ");
-    Serial.print(maxValue);
-    Serial.println("");
-  */
-  float divider = 1000 / 255.0; //1000 max allowed value, 255 max byte value
-  uint8_t currentValue = analogValue / divider;
-  uint8_t scaledMinValue = minValue / divider;
-  uint8_t scaledMaxValue = maxValue / divider;
-
-  uint8_t ble_value_array[4] = {currentValue, scaledMinValue, scaledMaxValue, 0x00 };
-
-  // Write the array to the characteristic
-  lightCharacteristic.writeValue(ble_value_array, 4);
-
-
-}
-
-
-
-
-
-void manageDate() {
-  if (dateCharacteristic.written()) {
-    
-    long xx = getLongFromBytes(dateCharacteristic.value());
-    
-    rtc.setTime(xx);
-    noInterrupts();
-    Serial.println("Date update");
-    Serial.println(xx);
-    Serial.println(rtc.getEpoch());
-    interrupts();
-
-  } else {
-    //Serial.println(rtc.getEpoch());
-    byte* tmpDate = getBytesFromLong(rtc.getEpoch());
-
-    dateCharacteristic.writeValue(tmpDate, 8);
-    delete[] tmpDate;
-  }
-
 }
 
 
