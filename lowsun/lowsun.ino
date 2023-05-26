@@ -217,7 +217,7 @@ void manageSettingsDoor() {
       if( motor1.get_position() == last_motor_position){
         same_for++;
       }
-      last_motor_position = motor1.get_position(;
+      last_motor_position = motor1.get_position();
       
     }
     
@@ -229,11 +229,7 @@ void manageSettingsDoor() {
 
 
   } else {
-    noInterrupts();
-      Serial.println("else continue Door");
-      Serial.println(current_target);
-      Serial.println(motor1.target_reached());
-      interrupts();
+
 
     
    motor1.set_target(current_target);
@@ -392,6 +388,7 @@ void manageLight() {
 
 void manageDate() {
   if (dateCharacteristic.written()) {
+  
     
     long xx = getLongFromBytes(dateCharacteristic.value());
     
@@ -399,7 +396,16 @@ void manageDate() {
     noInterrupts();
     Serial.println("Date update");
     Serial.println(xx);
-    Serial.println(rtc.getEpoch());
+    
+    
+    Serial.print(dateCharacteristic.value()[0]);
+    Serial.print(";");
+    Serial.print(dateCharacteristic.value()[1]);
+    Serial.print(";");
+    Serial.print(dateCharacteristic.value()[2]);
+    Serial.print(";");
+    Serial.println(dateCharacteristic.value()[3]);
+    //Serial.println(rtc.getEpoch());
     interrupts();
 
   } else {
