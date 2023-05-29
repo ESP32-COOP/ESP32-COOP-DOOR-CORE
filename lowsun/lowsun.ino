@@ -51,6 +51,7 @@ float kp = 8;
 float kd = 1;
 float ki = 0.01;
 motor motor1 = motor(ENCA, ENCB, IN1, IN2, 0, 50, 100);  // Set upper limit to 100
+//motor motor1 = motor(ENCA, ENCB, IN1, IN2);  // Set upper limit to 100
 
 
 void setup() {
@@ -127,6 +128,7 @@ void loop() {
       manageSettingsDoor();
       manageSettingsClose();
       manageSettingsOpen();
+      manageAutoDoor();
     }
 
     // when the central disconnects, print it out:
@@ -150,7 +152,7 @@ void manageAutoDoor() {
       bool isTimeFulfill = (rtc.getHour() > doorOpenTimeH && rtc.getMinute() > doorOpenTimeM);
       bool isLightAndTimeFulfill = (isLightFulfill && isTimeFulfill);
       bool isLightOrTimeFulfill = (isLightFulfill || isTimeFulfill);
-
+      
       switch (doorOpenMode) {
         case 1:
           openingDoor = isLightFulfill;
@@ -167,50 +169,84 @@ void manageAutoDoor() {
           break;
       }
 
+      noInterrupts();
+      Serial.print("openingDoor: ");
+      Serial.println(openingDoor);
+
+      Serial.print("isLightFulfill: ");
+      Serial.println(isLightFulfill);
+
+      Serial.print("isTimeFulfill: ");
+      Serial.println(isTimeFulfill);
+
+      Serial.print("isLightAndTimeFulfill: ");
+      Serial.println(isLightAndTimeFulfill);
+
+      Serial.print("isLightOrTimeFulfill: ");
+      Serial.println(isLightOrTimeFulfill);
+      interrupts();
+
       if (openingDoor) {
         doorWantedStatus = 1;
-        uint8_t currentDoorNbTurn = doorNbTurn * 10;
+        //uint8_t currentDoorNbTurn = doorCharacteristic.value()[0];
         uint8_t currentDoorStatus = 11;
 
 
-        uint8_t ble_value_array[2] = { currentDoorNbTurn, currentDoorStatus };
+        //uint8_t ble_value_array[2] = { currentDoorNbTurn, currentDoorStatus };
 
         // Write the array to the characteristic
-        doorCharacteristic.writeValue(ble_value_array, 2);
+        //doorCharacteristic.writeValue(ble_value_array, 2);
       }
-    }else if (doorWantedStatus == doorStatus && doorStatus == 1) {  // door currently open
-      bool closeingDoor = false;
+    } else if (doorWantedStatus == doorStatus && doorStatus == 1) {  // door currently open
+      bool closingDoor = false;
       bool isLightFulfill = (analogValue < doorCloseLightThreshold);
       bool isTimeFulfill = (rtc.getHour() > doorCloseTimeH && rtc.getMinute() > doorCloseTimeM);
       bool isLightAndTimeFulfill = (isLightFulfill && isTimeFulfill);
       bool isLightOrTimeFulfill = (isLightFulfill || isTimeFulfill);
-
+      
       switch (doorOpenMode) {
         case 1:
-          closeingDoor = isLightFulfill;
+          closingDoor = isLightFulfill;
           break;
         case 2:
-          closeingDoor = isTimeFulfill;
+          closingDoor = isTimeFulfill;
           break;
         case 3:
-          closeingDoor = isLightAndTimeFulfill;
+          closingDoor = isLightAndTimeFulfill;
         case 4:
-          closeingDoor = isLightOrTimeFulfill;
+          closingDoor = isLightOrTimeFulfill;
           break;
         default:
           break;
       }
 
-      if (closeingDoor) {
+      noInterrupts();
+      Serial.print("closingDoor: ");
+      Serial.println(closingDoor);
+
+      Serial.print("isLightFulfill: ");
+      Serial.println(isLightFulfill);
+
+      Serial.print("isTimeFulfill: ");
+      Serial.println(isTimeFulfill);
+
+      Serial.print("isLightAndTimeFulfill: ");
+      Serial.println(isLightAndTimeFulfill);
+
+      Serial.print("isLightOrTimeFulfill: ");
+      Serial.println(isLightOrTimeFulfill);
+      interrupts();
+
+      if (closingDoor) {
         doorWantedStatus = 0;
-        uint8_t currentDoorNbTurn = doorNbTurn * 10;
+        //uint8_t currentDoorNbTurn = doorCharacteristic.value()[0];
         uint8_t currentDoorStatus = 10;
 
 
-        uint8_t ble_value_array[2] = { currentDoorNbTurn, currentDoorStatus };
+        //uint8_t ble_value_array[2] = { currentDoorNbTurn, currentDoorStatus };
 
         // Write the array to the characteristic
-        doorCharacteristic.writeValue(ble_value_array, 2);
+        //doorCharacteristic.writeValue(ble_value_array, 2);
       }
     }
   }
@@ -275,6 +311,7 @@ void manageSettingsDoor() {
     interrupts();
 
     doorNbTurn = doorCharacteristic.value()[0] / 10;
+    modeAuto = false;
     if (doorCharacteristic.value()[1] == 2) {
       doorWantedStatus = !doorWantedStatus;
       testDoor = true;
