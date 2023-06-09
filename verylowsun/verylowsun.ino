@@ -46,7 +46,7 @@ int doorOpenTImeM = -1;
 
 //door controle
 int oneTurn = 372;//372
-int doorStaus = 1;
+int doorStatus = 1;
 float kp = 8;
 float kd = 1;
 float ki = 0.01;
@@ -85,7 +85,7 @@ void setup() {
   BLE.addService(service);
   dateCharacteristic.writeValue(0);
   lightCharacteristic.writeValue(0);
-  uint8_t initialValue[] = {10, 1};
+  uint8_t initialValue[] = {10, 0};
   doorCharacteristic.writeValue(initialValue, sizeof(initialValue));
 
 
@@ -201,20 +201,23 @@ void manageSettingsDoor() {
       interrupts();
 
       doorWantedStatus = doorCharacteristic.value()[1];
-      if (doorWantedStatus == 0){
-        current_target = 0;
-        gowing_up = false;
-      }else{
-        current_target = target;
-          gowing_up = true;
-      }
+      doorNbTurn = doorCharacteristic.value()[0] / 10;
+     
+
+      if (doorWantedStatus == 0 && doorStatus != doorWantedStatus) {
+      current_target = (int)0;
+      
+    } else if (doorWantedStatus == 1 && doorStatus != doorWantedStatus) {
+      current_target = (int)oneTurn * doorNbTurn;
+      
+    }
 
     
  
 
   
     runMotor(current_target);
-    doorStaus = doorWantedStatus;
+    doorStatus = doorWantedStatus;
     count++;
 
 
@@ -227,7 +230,7 @@ void manageSettingsDoor() {
 
     
 
-    doorStaus = doorWantedStatus;
+    doorStatus = doorWantedStatus;
     count++;
 
   }
