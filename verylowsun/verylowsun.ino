@@ -25,28 +25,31 @@ int minValue = analogValue;
 int maxValue = analogValue;
 
 //settings door
-int doorWantedStatus = 1;
+int doorWantedStatus = 0;
 float doorNbTurn = 1;
 int count =1;
 int target = 372;
 int current_target =target;
 int gowing_up;
+bool modeAuto = false;
+bool testDoor = false;
 
 //settings close
 int doorCloseMode = 0;
 int doorCloseLightThreshold = -1;
 int doorCloseTimeH = -1;
-int doorCloseTImeM = -1;
+int doorCloseTimeM = -1;
+
 
 //settings open
 int doorOpenMode = 0;
 int doorOpenLightThreshold = -1;
 int doorOpenTimeH = -1;
-int doorOpenTImeM = -1;
+int doorOpenTimeM = -1;
 
 //door controle
 int oneTurn = 372;//372
-int doorStatus = 1;
+int doorStatus = 0;
 float kp = 8;
 float kd = 1;
 float ki = 0.01;
@@ -120,6 +123,8 @@ void loop() {
       // use the value to control the LED:
       delay(500);
 
+      manageAutoDoor();
+
       manageDate();
       manageLight();
       manageSettingsDoor();
@@ -137,12 +142,124 @@ void loop() {
     Serial.println(central.address());
       interrupts();
   }
-
-
-
-
-
 }
+
+
+
+void manageAutoDoor() {
+
+  if (modeAuto) {
+    noInterrupts();
+    Serial.println("modeAuto");
+    interrupts();
+    
+    if (doorWantedStatus == doorStatus && doorStatus == 0) {  // door currently close
+      bool openingDoor = false;
+      
+      bool isLightFulfill = (analogValue > doorOpenLightThreshold);
+      bool isTimeFulfill = false; //(rtc.getHour() > doorOpenTimeH && rtc.getMinute() > doorOpenTimeM);
+      bool isLightAndTimeFulfill = (isLightFulfill && isTimeFulfill);
+      bool isLightOrTimeFulfill = (isLightFulfill || isTimeFulfill);
+      /*
+      
+      switch (doorOpenMode) {
+        case 1:
+          openingDoor = isLightFulfill;
+          break;
+        case 2:
+          openingDoor = isTimeFulfill;
+          break;
+        case 3:
+          openingDoor = isLightAndTimeFulfill;
+        case 4:
+          openingDoor = isLightOrTimeFulfill;
+          break;
+        default:
+          break;
+      }
+      */
+      noInterrupts();
+      Serial.print("openingDoor: ");
+      Serial.print(openingDoor);
+      
+      Serial.print(" Light?: ");
+      Serial.print(isLightFulfill);
+      
+      Serial.print(" Time?: ");
+      Serial.println(isTimeFulfill);
+      
+      //Serial.print(" Light&Time?: ");
+      //Serial.println(isLightAndTimeFulfill);
+
+      //Serial.print("isLightOrTimeFulfill: ");
+      //Serial.println(isLightOrTimeFulfill);
+      /*
+      */
+      interrupts();
+      
+
+      if (openingDoor) {
+        doorWantedStatus = 1;
+        //uint8_t doorUpdate[] = {doorCharacteristic.value()[0] , 11};
+        //doorCharacteristic.writeValue(doorUpdate, sizeof(doorUpdate));
+      }
+      
+    } else if (doorWantedStatus == doorStatus && doorStatus == 1) {  // door currently open
+      bool closingDoor = false;
+      
+      bool isLightFulfill = (analogValue < doorCloseLightThreshold);
+      bool isTimeFulfill = false;//(rtc.getHour() > doorCloseTimeH && rtc.getMinute() > doorCloseTimeM);
+      bool isLightAndTimeFulfill = (isLightFulfill && isTimeFulfill);
+      bool isLightOrTimeFulfill = (isLightFulfill || isTimeFulfill);
+      /*
+      
+      switch (doorOpenMode) {
+        case 1:
+          closingDoor = isLightFulfill;
+          break;
+        case 2:
+          closingDoor = isTimeFulfill;
+          break;
+        case 3:
+          closingDoor = isLightAndTimeFulfill;
+        case 4:
+          closingDoor = isLightOrTimeFulfill;
+          break;
+        default:
+          break;
+      }*/
+
+      noInterrupts();
+      Serial.print("closingDoor: ");
+      Serial.print(closingDoor);
+      
+      Serial.print(" Light?: ");
+      Serial.print(isLightFulfill);
+      
+      Serial.print(" Time?: ");
+      Serial.println(isTimeFulfill);
+    
+      //Serial.print(" Light&Time: ");
+      //Serial.println(isLightAndTimeFulfill);
+
+      //Serial.print("isLightOrTimeFulfill: ");
+      //Serial.println(isLightOrTimeFulfill);
+      /**/
+      interrupts();
+      
+
+      if (closingDoor) {
+        doorWantedStatus = 0;
+        //uint8_t doorUpdate[] = {doorCharacteristic.value()[0] , 10};
+        //doorCharacteristic.writeValue(doorUpdate, sizeof(doorUpdate));
+      }
+
+      
+    }
+  }
+}
+
+
 
 void manageSettingsOpen() {
   if (doorOpenCharacteristic.written() ) {
@@ -160,7 +277,7 @@ void manageSettingsOpen() {
     doorOpenMode = doorOpenCharacteristic.value()[0];
     doorOpenLightThreshold = doorOpenCharacteristic.value()[1];
     doorOpenTimeH = doorOpenCharacteristic.value()[2];
-    doorOpenTImeM = doorOpenCharacteristic.value()[3];
+    doorOpenTimeM = doorOpenCharacteristic.value()[3];
 
   } else {
     //todo
@@ -183,7 +300,7 @@ void manageSettingsClose() {
     doorCloseMode = doorCloseCharacteristic.value()[0];
     doorCloseLightThreshold = doorCloseCharacteristic.value()[1];
     doorCloseTimeH = doorCloseCharacteristic.value()[2];
-    doorCloseTImeM = doorCloseCharacteristic.value()[3];
+    doorCloseTimeM = doorCloseCharacteristic.value()[3];
 
   } else {
     //todo
@@ -194,43 +311,71 @@ void manageSettingsClose() {
 
 void manageSettingsDoor() {
  
-  if (doorCharacteristic.written() ) {
+  if (doorCharacteristic.written()  ) {
     
     noInterrupts();
       Serial.println("update Door");
       interrupts();
 
-      doorWantedStatus = doorCharacteristic.value()[1];
+
       doorNbTurn = doorCharacteristic.value()[0] / 10;
+      modeAuto = false;
+      if (doorCharacteristic.value()[1] == 2) {
+        uint8_t doorUpdate[] = {doorCharacteristic.value()[0] , doorWantedStatus};
+        doorCharacteristic.writeValue(doorUpdate, sizeof(doorUpdate));
+        doorWantedStatus = !doorWantedStatus;
+        testDoor = true;
+        
+
+      } else if (doorCharacteristic.value()[1] < 10) {
+        doorWantedStatus = doorCharacteristic.value()[1];
+      } else {
+        doorWantedStatus = doorCharacteristic.value()[1] - 10;
+        modeAuto = true;
+      }
      
 
-      if (doorWantedStatus == 0 && doorStatus != doorWantedStatus) {
-      current_target = (int)0;
       
-    } else if (doorWantedStatus == 1 && doorStatus != doorWantedStatus) {
-      current_target = (int)oneTurn * doorNbTurn;
-      
-    }
 
     
  
 
   
-    runMotor(current_target);
-    doorStatus = doorWantedStatus;
-    count++;
+    
 
 
   } else {
     noInterrupts();
-      Serial.println("else continue Door");
-      Serial.println(current_target);
+      Serial.print("else continue Door : ");
+      Serial.print("current_target : ");
+      Serial.print(current_target);
+      Serial.print("doorWantedStatus : ");
+      Serial.print(doorWantedStatus);
+      Serial.print("doorStatus : ");
+      Serial.println(doorStatus);
 
       interrupts();
 
+      if (doorWantedStatus == 0 && doorStatus != doorWantedStatus) {
+      current_target = (int)0;
+      
+      } else if (doorWantedStatus == 1 && doorStatus != doorWantedStatus) {
+        current_target = (int)oneTurn * doorNbTurn;
+        
+      }
+
+      if (doorStatus != doorWantedStatus){
+        runMotor(current_target);
+        doorStatus = doorWantedStatus;
+      }
+
     
 
-    doorStatus = doorWantedStatus;
+    if (testDoor) {
+      Serial.println("test go back");
+      doorWantedStatus = !doorWantedStatus;
+      testDoor = false;
+    }
     count++;
 
   }
@@ -289,7 +434,7 @@ void manageDate() {
     noInterrupts();
     Serial.println("Date update");
     Serial.println(xx);
-    Serial.println(rtc.getEpoch());
+    //Serial.println(rtc.getEpoch());
     interrupts();
 
   } else {
