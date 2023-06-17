@@ -178,24 +178,25 @@ void manageAutoDoor() {
           break;
       }
       */
-      noInterrupts();
+      //noInterrupts();
       Serial.print("openingDoor: ");
       Serial.print(openingDoor);
-      
+      yield(); 
       Serial.print(" Light?: ");
       Serial.print(isLightFulfill);
       
       Serial.print(" Time?: ");
-      Serial.println(isTimeFulfill);
+      Serial.print(isTimeFulfill);
+      yield(); 
       
-      //Serial.print(" Light&Time?: ");
-      //Serial.println(isLightAndTimeFulfill);
+      Serial.print(" Light&Time?: ");
+      Serial.println(isLightAndTimeFulfill);
 
       //Serial.print("isLightOrTimeFulfill: ");
       //Serial.println(isLightOrTimeFulfill);
       /*
       */
-      interrupts();
+      //interrupts();
       
 
       if (openingDoor) {
@@ -229,23 +230,25 @@ void manageAutoDoor() {
           break;
       }*/
 
-      noInterrupts();
+      //noInterrupts();
       Serial.print("closingDoor: ");
       Serial.print(closingDoor);
-      
+      yield(); 
       Serial.print(" Light?: ");
       Serial.print(isLightFulfill);
       
       Serial.print(" Time?: ");
-      Serial.println(isTimeFulfill);
+      Serial.print(isTimeFulfill);
+      yield(); 
     
-      //Serial.print(" Light&Time: ");
-      //Serial.println(isLightAndTimeFulfill);
+      Serial.print(" Light&Time: ");
+      Serial.println(isLightAndTimeFulfill);
 
       //Serial.print("isLightOrTimeFulfill: ");
       //Serial.println(isLightOrTimeFulfill);
       /**/
-      interrupts();
+      //interrupts();
+      
       
 
       if (closingDoor) {
