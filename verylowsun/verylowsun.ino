@@ -142,12 +142,14 @@ void manageAutoDoor() {
 
   if (modeAuto) {
     Serial.println("mAuto");
+    int TimeH = rtc.getHour(true);
+    int TimeM = rtc.getMinute();
     
     if (doorWantedStatus == doorStatus && doorStatus == 0) {  // door currently close
       bool openingDoor = false;
       
       bool isLightFulfill = (analogValue > doorOpenLightThreshold);
-      bool isTimeFulfill = (( doorCloseTimeH >  rtc.getHour(true) && rtc.getHour(true) > doorOpenTimeH) || (rtc.getHour(true) == doorOpenTimeH && rtc.getMinute() >= doorOpenTimeM));
+      bool isTimeFulfill = (( (doorCloseTimeH < 0 || doorCloseTimeH >  TimeH) && TimeH > doorOpenTimeH) || (TimeH == doorOpenTimeH && TimeM >= doorOpenTimeM));
       bool isLightAndTimeFulfill = (isLightFulfill && isTimeFulfill);
       bool isLightOrTimeFulfill = (isLightFulfill || isTimeFulfill);
     
@@ -187,7 +189,7 @@ void manageAutoDoor() {
       Serial.print(isLightOrTimeFulfill);
 
       Serial.print(" H: ");
-      Serial.print(rtc.getHour(true));
+      Serial.print(TimeH);
 
       Serial.print(" TH: ");
       Serial.print(doorOpenTimeH);
@@ -206,12 +208,12 @@ void manageAutoDoor() {
       bool closingDoor = false;
       
       bool isLightFulfill = (analogValue < doorCloseLightThreshold);
-      bool isTimeFulfill = ( (rtc.getHour(true) > doorCloseTimeH || rtc.getHour(true) < doorOpenTimeH) || (rtc.getHour(true) == doorCloseTimeH && rtc.getMinute() >= doorCloseTimeM));
+      bool isTimeFulfill = ( (TimeH > doorCloseTimeH || (TimeH < doorOpenTimeH || doorOpenTimeH < 0 )) || (TimeH == doorCloseTimeH && TimeM >= doorCloseTimeM));
       bool isLightAndTimeFulfill = (isLightFulfill && isTimeFulfill);
       bool isLightOrTimeFulfill = (isLightFulfill || isTimeFulfill);
       
       
-      switch (doorOpenMode) {
+      switch (doorCloseMode) {
         case 1:
           closingDoor = isLightFulfill;
           break;
@@ -231,7 +233,7 @@ void manageAutoDoor() {
       Serial.print(closingDoor);
 
       Serial.print(" mod: ");
-      Serial.print(doorOpenMode);
+      Serial.print(doorCloseMode);
 
       Serial.print(" L?: ");
       Serial.print(isLightFulfill);
@@ -246,10 +248,10 @@ void manageAutoDoor() {
       Serial.print(isLightOrTimeFulfill);
 
       Serial.print(" H: ");
-      Serial.print(rtc.getHour(true));
+      Serial.print(TimeH);
 
       Serial.print(" TH: ");
-      Serial.print(doorOpenTimeH);
+      Serial.print(doorCloseTimeH);
 
       Serial.println();
       
@@ -524,14 +526,14 @@ void runMotor(int target) {
     // Store previous error
     eprev = e;
 
-    Serial.print(target);
-    Serial.print(" ");
-    Serial.print(pos);
-    Serial.print(" ");
-    Serial.print(pwr);
-    Serial.print(" ");
-    Serial.print(countLastPosition);
-    Serial.println();
+    //Serial.print(target);
+    //Serial.print(" ");
+    //Serial.print(pos);
+    //Serial.print(" ");
+    //Serial.print(pwr);
+    //Serial.print(" ");
+    //Serial.print(countLastPosition);
+    //Serial.println();
   }
 }
 
@@ -557,5 +559,3 @@ void readEncoder() {
     posi--;
   }
 }
-
-
