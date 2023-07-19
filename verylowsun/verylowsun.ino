@@ -8,11 +8,11 @@
 
 volatile int posi = 0;  // specify posi as volatile: https://www.arduino.cc/reference/en/language/variables/variable-scope-qualifiers/volatile/
 
-//ESP32Time rtc;
-ESP32Time rtc(7200);  // offset in seconds GMT+2
+ESP32Time rtc;
+//ESP32Time rtc(7200);  // offset in seconds GMT+2
 
 BLEService service("1ce76320-2d32-41af-b4c4-46836ea7a62a"); // Bluetooth® Low Energy LED Service
-BLECharacteristic dateCharacteristic("ad804469-19ec-406a-b949-31ae17e43813", BLERead | BLENotify | BLEWrite, 8);
+BLECharacteristic dateCharacteristic("ad804469-19ec-406a-b949-31ae17e43813", BLERead | BLENotify | BLEWrite, 9); // 8 UNIX + 1 UTC offset
 BLECharacteristic lightCharacteristic("947aad02-c25d-11ed-afa1-0242ac120002", BLERead | BLENotify | BLEWrite , 4);
 BLECharacteristic doorCharacteristic("c3773399-b755-4e30-9160-bed203fae718", BLERead | BLENotify | BLEWrite , 2);
 BLECharacteristic doorCloseCharacteristic("e011ba0e-84c5-4e83-8648-f3e2660c44b0", BLERead | BLENotify | BLEWrite , 4);
@@ -23,6 +23,7 @@ uint8_t ble_value = 0x0;
 int analogValue = 500;
 int minValue = analogValue;
 int maxValue = analogValue;
+int timeOffset = 0;
 
 //settings door
 int doorWantedStatus = 0;
@@ -144,12 +145,17 @@ void manageAutoDoor() {
     Serial.println("mAuto");
     int TimeH = rtc.getHour(true);
     int TimeM = rtc.getMinute();
+
+    bool isTimeFulfillClose = (doorCloseTimeH > 0 && ((TimeH > doorCloseTimeH + timeOffset ) || (TimeH == doorCloseTimeH + timeOffset && TimeM >= doorCloseTimeM)));
+
+    bool isTimeFulfillOpen = (doorOpenTimeH > 0 && ((TimeH > doorOpenTimeH + timeOffset ) || (TimeH == doorOpenTimeH + timeOffset && TimeM >= doorOpenTimeM)));
     
     if (doorWantedStatus == doorStatus && doorStatus == 0) {  // door currently close
       bool openingDoor = false;
       
       bool isLightFulfill = (analogValue > doorOpenLightThreshold);
-      bool isTimeFulfill = (( (doorCloseTimeH < 0 || doorCloseTimeH >  TimeH) && TimeH > doorOpenTimeH) || (TimeH == doorOpenTimeH && TimeM >= doorOpenTimeM));
+      //bool isTimeFulfill = (( (doorCloseTimeH  < 0 || doorCloseTimeH + timeOffset >  TimeH) && TimeH > doorOpenTimeH + timeOffset) || (TimeH == doorOpenTimeH +timeOffset && TimeM >= doorOpenTimeM));
+      bool isTimeFulfill = isTimeFulfillOpen && !isTimeFulfillClose;
       bool isLightAndTimeFulfill = (isLightFulfill && isTimeFulfill);
       bool isLightOrTimeFulfill = (isLightFulfill || isTimeFulfill);
     
@@ -192,7 +198,7 @@ void manageAutoDoor() {
       Serial.print(TimeH);
 
       Serial.print(" TH: ");
-      Serial.print(doorOpenTimeH);
+      Serial.print(doorOpenTimeH + timeOffset);
 
       Serial.println();
 
@@ -208,7 +214,8 @@ void manageAutoDoor() {
       bool closingDoor = false;
       
       bool isLightFulfill = (analogValue < doorCloseLightThreshold);
-      bool isTimeFulfill = ( (TimeH > doorCloseTimeH || (TimeH < doorOpenTimeH || doorOpenTimeH < 0 )) || (TimeH == doorCloseTimeH && TimeM >= doorCloseTimeM));
+      //bool isTimeFulfill = (doorCloseTimeH > 0 && ((TimeH > doorCloseTimeH + timeOffset ) || (TimeH == doorCloseTimeH + timeOffset && TimeM >= doorCloseTimeM)));
+      bool isTimeFulfill = isTimeFulfillClose;
       bool isLightAndTimeFulfill = (isLightFulfill && isTimeFulfill);
       bool isLightOrTimeFulfill = (isLightFulfill || isTimeFulfill);
       
@@ -248,10 +255,10 @@ void manageAutoDoor() {
       Serial.print(isLightOrTimeFulfill);
 
       Serial.print(" H: ");
-      Serial.print(TimeH);
+      Serial.print(TimeH );
 
       Serial.print(" TH: ");
-      Serial.print(doorCloseTimeH);
+      Serial.print(doorCloseTimeH + timeOffset);
 
       Serial.println();
       
@@ -419,10 +426,13 @@ void manageDate() {
   if (dateCharacteristic.written()) {
     
     long xx = getLongFromBytes(dateCharacteristic.value());
+
+    timeOffset = dateCharacteristic.value()[8]-12;
     
     rtc.setTime(xx);
     Serial.println("Date update");
     Serial.println(xx);
+    Serial.println(timeOffset);
     //Serial.println(rtc.getEpoch());
 
   } else {
@@ -526,14 +536,14 @@ void runMotor(int target) {
     // Store previous error
     eprev = e;
 
-    //Serial.print(target);
-    //Serial.print(" ");
-    //Serial.print(pos);
-    //Serial.print(" ");
-    //Serial.print(pwr);
-    //Serial.print(" ");
-    //Serial.print(countLastPosition);
-    //Serial.println();
+    Serial.print(target);
+    Serial.print(" ");
+    Serial.print(pos);
+    Serial.print(" ");
+    Serial.print(pwr);
+    Serial.print(" ");
+    Serial.print(countLastPosition);
+    Serial.println();
   }
 }
 
