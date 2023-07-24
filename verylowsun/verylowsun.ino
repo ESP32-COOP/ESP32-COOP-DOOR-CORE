@@ -5,14 +5,15 @@
 #define PWM 27
 #define IN2 26 //B1-A
 #define IN1 25 //A1-A
+#define LIGHT 34
 
 volatile int posi = 0;  // specify posi as volatile: https://www.arduino.cc/reference/en/language/variables/variable-scope-qualifiers/volatile/
 
-//ESP32Time rtc;
-ESP32Time rtc(7200);  // offset in seconds GMT+2
+ESP32Time rtc;
+//ESP32Time rtc(7200);  // offset in seconds GMT+2
 
 BLEService service("1ce76320-2d32-41af-b4c4-46836ea7a62a"); // Bluetooth® Low Energy LED Service
-BLECharacteristic dateCharacteristic("ad804469-19ec-406a-b949-31ae17e43813", BLERead | BLENotify | BLEWrite, 8);
+BLECharacteristic dateCharacteristic("ad804469-19ec-406a-b949-31ae17e43813", BLERead | BLENotify | BLEWrite, 9); // 8 UNIX + 1 UTC offset
 BLECharacteristic lightCharacteristic("947aad02-c25d-11ed-afa1-0242ac120002", BLERead | BLENotify | BLEWrite , 4);
 BLECharacteristic doorCharacteristic("c3773399-b755-4e30-9160-bed203fae718", BLERead | BLENotify | BLEWrite , 2);
 BLECharacteristic doorCloseCharacteristic("e011ba0e-84c5-4e83-8648-f3e2660c44b0", BLERead | BLENotify | BLEWrite , 4);
@@ -23,6 +24,7 @@ uint8_t ble_value = 0x0;
 int analogValue = 500;
 int minValue = analogValue;
 int maxValue = analogValue;
+int timeOffset = 0;
 
 //settings door
 int doorWantedStatus = 0;
@@ -142,12 +144,19 @@ void manageAutoDoor() {
 
   if (modeAuto) {
     Serial.println("mAuto");
+    int TimeH = rtc.getHour(true);
+    int TimeM = rtc.getMinute();
+
+    bool isTimeFulfillClose = (doorCloseTimeH > 0 && ((TimeH > doorCloseTimeH + timeOffset ) || (TimeH == doorCloseTimeH + timeOffset && TimeM >= doorCloseTimeM)));
+
+    bool isTimeFulfillOpen = (doorOpenTimeH > 0 && ((TimeH > doorOpenTimeH + timeOffset ) || (TimeH == doorOpenTimeH + timeOffset && TimeM >= doorOpenTimeM)));
     
     if (doorWantedStatus == doorStatus && doorStatus == 0) {  // door currently close
       bool openingDoor = false;
       
       bool isLightFulfill = (analogValue > doorOpenLightThreshold);
-      bool isTimeFulfill = (( doorCloseTimeH >  rtc.getHour(true) && rtc.getHour(true) > doorOpenTimeH) || (rtc.getHour(true) == doorOpenTimeH && rtc.getMinute() >= doorOpenTimeM));
+      //bool isTimeFulfill = (( (doorCloseTimeH  < 0 || doorCloseTimeH + timeOffset >  TimeH) && TimeH > doorOpenTimeH + timeOffset) || (TimeH == doorOpenTimeH +timeOffset && TimeM >= doorOpenTimeM));
+      bool isTimeFulfill = isTimeFulfillOpen && !isTimeFulfillClose;
       bool isLightAndTimeFulfill = (isLightFulfill && isTimeFulfill);
       bool isLightOrTimeFulfill = (isLightFulfill || isTimeFulfill);
     
@@ -187,10 +196,10 @@ void manageAutoDoor() {
       Serial.print(isLightOrTimeFulfill);
 
       Serial.print(" H: ");
-      Serial.print(rtc.getHour(true));
+      Serial.print(TimeH);
 
       Serial.print(" TH: ");
-      Serial.print(doorOpenTimeH);
+      Serial.print(doorOpenTimeH + timeOffset);
 
       Serial.println();
 
@@ -206,12 +215,13 @@ void manageAutoDoor() {
       bool closingDoor = false;
       
       bool isLightFulfill = (analogValue < doorCloseLightThreshold);
-      bool isTimeFulfill = ( (rtc.getHour(true) > doorCloseTimeH || rtc.getHour(true) < doorOpenTimeH) || (rtc.getHour(true) == doorCloseTimeH && rtc.getMinute() >= doorCloseTimeM));
+      //bool isTimeFulfill = (doorCloseTimeH > 0 && ((TimeH > doorCloseTimeH + timeOffset ) || (TimeH == doorCloseTimeH + timeOffset && TimeM >= doorCloseTimeM)));
+      bool isTimeFulfill = isTimeFulfillClose;
       bool isLightAndTimeFulfill = (isLightFulfill && isTimeFulfill);
       bool isLightOrTimeFulfill = (isLightFulfill || isTimeFulfill);
       
       
-      switch (doorOpenMode) {
+      switch (doorCloseMode) {
         case 1:
           closingDoor = isLightFulfill;
           break;
@@ -231,7 +241,7 @@ void manageAutoDoor() {
       Serial.print(closingDoor);
 
       Serial.print(" mod: ");
-      Serial.print(doorOpenMode);
+      Serial.print(doorCloseMode);
 
       Serial.print(" L?: ");
       Serial.print(isLightFulfill);
@@ -246,10 +256,10 @@ void manageAutoDoor() {
       Serial.print(isLightOrTimeFulfill);
 
       Serial.print(" H: ");
-      Serial.print(rtc.getHour(true));
+      Serial.print(TimeH );
 
       Serial.print(" TH: ");
-      Serial.print(doorOpenTimeH);
+      Serial.print(doorCloseTimeH + timeOffset);
 
       Serial.println();
       
@@ -270,17 +280,18 @@ void manageSettingsOpen() {
   if (doorOpenCharacteristic.written() ) {
     
       Serial.println("update Door Open settings");
-    Serial.print(doorOpenCharacteristic.value()[0]);
-    Serial.print(";");
-    Serial.print(doorOpenCharacteristic.value()[1]);
-    Serial.print(";");
-    Serial.print(doorOpenCharacteristic.value()[2]);
-    Serial.print(";");
-    Serial.println(doorOpenCharacteristic.value()[3]);
+    
     doorOpenMode = doorOpenCharacteristic.value()[0];
-    doorOpenLightThreshold = doorOpenCharacteristic.value()[1];
+    doorOpenLightThreshold = doorOpenCharacteristic.value()[1]*4;
     doorOpenTimeH = doorOpenCharacteristic.value()[2];
     doorOpenTimeM = doorOpenCharacteristic.value()[3];
+    Serial.print(doorOpenMode);
+    Serial.print(";");
+    Serial.print(doorOpenLightThreshold);
+    Serial.print(";");
+    Serial.print(doorOpenTimeH);
+    Serial.print(";");
+    Serial.println(doorOpenTimeM);
 
   } 
 }
@@ -289,21 +300,21 @@ void manageSettingsClose() {
   if (doorCloseCharacteristic.written() ) {
     
       Serial.println("update Door Close settings");
-    Serial.print(doorCloseCharacteristic.value()[0]);
-    Serial.print(";");
-    Serial.print(doorCloseCharacteristic.value()[1]);
-    Serial.print(";");
-    Serial.print(doorCloseCharacteristic.value()[2]);
-    Serial.print(";");
-    Serial.println(doorCloseCharacteristic.value()[3]);
+    
     doorCloseMode = doorCloseCharacteristic.value()[0];
-    doorCloseLightThreshold = doorCloseCharacteristic.value()[1];
+    doorCloseLightThreshold = doorCloseCharacteristic.value()[1]*4;
     doorCloseTimeH = doorCloseCharacteristic.value()[2];
     doorCloseTimeM = doorCloseCharacteristic.value()[3];
 
-  } else {
-    //todo
-  }
+    Serial.print(doorCloseMode);
+    Serial.print(";");
+    Serial.print(doorCloseLightThreshold);
+    Serial.print(";");
+    Serial.print(doorCloseTimeH);
+    Serial.print(";");
+    Serial.println(doorCloseTimeM);
+
+  } 
 }
 
 
@@ -375,15 +386,13 @@ void manageSettingsDoor() {
 
 
 void manageLight() {
+  analogValue = analogRead(LIGHT);
   if (lightCharacteristic.written() && lightCharacteristic.value()[3] != 0x00) {
-    analogValue = random(10, 1000);
     minValue = analogValue;
     maxValue = analogValue;
     Serial.println("reset light");
 
-
   } else {
-    analogValue = random(10, 1000);
     minValue = min(analogValue, minValue);
     maxValue = max(analogValue, maxValue);
   }
@@ -417,10 +426,13 @@ void manageDate() {
   if (dateCharacteristic.written()) {
     
     long xx = getLongFromBytes(dateCharacteristic.value());
+
+    timeOffset = dateCharacteristic.value()[8]-12;
     
     rtc.setTime(xx);
     Serial.println("Date update");
     Serial.println(xx);
+    Serial.println(timeOffset);
     //Serial.println(rtc.getEpoch());
 
   } else {
@@ -557,5 +569,3 @@ void readEncoder() {
     posi--;
   }
 }
-
-
