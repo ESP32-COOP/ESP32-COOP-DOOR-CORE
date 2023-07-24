@@ -5,6 +5,7 @@
 #define PWM 27
 #define IN2 26 //B1-A
 #define IN1 25 //A1-A
+#define LIGHT 34
 
 volatile int posi = 0;  // specify posi as volatile: https://www.arduino.cc/reference/en/language/variables/variable-scope-qualifiers/volatile/
 
@@ -287,7 +288,7 @@ void manageSettingsOpen() {
     Serial.print(";");
     Serial.println(doorOpenCharacteristic.value()[3]);
     doorOpenMode = doorOpenCharacteristic.value()[0];
-    doorOpenLightThreshold = doorOpenCharacteristic.value()[1];
+    doorOpenLightThreshold = doorOpenCharacteristic.value()[1]*4;
     doorOpenTimeH = doorOpenCharacteristic.value()[2];
     doorOpenTimeM = doorOpenCharacteristic.value()[3];
 
@@ -306,7 +307,7 @@ void manageSettingsClose() {
     Serial.print(";");
     Serial.println(doorCloseCharacteristic.value()[3]);
     doorCloseMode = doorCloseCharacteristic.value()[0];
-    doorCloseLightThreshold = doorCloseCharacteristic.value()[1];
+    doorCloseLightThreshold = doorCloseCharacteristic.value()[1]*4;
     doorCloseTimeH = doorCloseCharacteristic.value()[2];
     doorCloseTimeM = doorCloseCharacteristic.value()[3];
 
@@ -384,15 +385,13 @@ void manageSettingsDoor() {
 
 
 void manageLight() {
+  analogValue = analogRead(LIGHT);
   if (lightCharacteristic.written() && lightCharacteristic.value()[3] != 0x00) {
-    analogValue = random(10, 1000);
     minValue = analogValue;
     maxValue = analogValue;
     Serial.println("reset light");
 
-
   } else {
-    analogValue = random(10, 1000);
     minValue = min(analogValue, minValue);
     maxValue = max(analogValue, maxValue);
   }
