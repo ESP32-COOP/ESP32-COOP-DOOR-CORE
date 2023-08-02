@@ -127,6 +127,9 @@ void loop() {
       manageSettingsClose();
       manageSettingsOpen();
 
+      Serial.print(F("light: "));
+      Serial.println(analogValue);
+
 
 
     }
@@ -387,6 +390,15 @@ void manageSettingsDoor() {
 
 void manageLight() {
   analogValue = analogRead(LIGHT);
+  Serial.print(F("light origin: "));
+      Serial.println(analogValue);
+  analogValue = analogValue /4;
+
+  //4095 maxium
+  if (analogValue >1000){
+   analogValue = 1000;
+    // maximum allowed by the BLE protocol, 1000 is bright above is very bright, not very usefull
+  }
   if (lightCharacteristic.written() && lightCharacteristic.value()[3] != 0x00) {
     minValue = analogValue;
     maxValue = analogValue;
@@ -405,7 +417,7 @@ void manageLight() {
     Serial.print(maxValue);
     Serial.println("");
   */
-  float divider = 1000 / 255.0; //1000 max allowed value, 255 max byte value
+  float divider = 1024 / 255.0; //1000 max allowed value, 255 max byte value
   uint8_t currentValue = analogValue / divider;
   uint8_t scaledMinValue = minValue / divider;
   uint8_t scaledMaxValue = maxValue / divider;
