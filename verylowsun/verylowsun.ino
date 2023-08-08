@@ -9,6 +9,8 @@
 
 volatile int posi = 0;  // specify posi as volatile: https://www.arduino.cc/reference/en/language/variables/variable-scope-qualifiers/volatile/
 
+uint32_t Freq = 0;
+
 ESP32Time rtc;
 //ESP32Time rtc(7200);  // offset in seconds GMT+2
 
@@ -98,11 +100,20 @@ void setup() {
   
       Serial.println("BLE LED Peripheral");
 
+      setCpuFrequencyMhz(160);
+    Freq = getCpuFrequencyMhz();
+    Serial.print("CPU Freq = ");
+    Serial.println(Freq);
+
 
 
 }
 
 void loop() {
+
+   
+
+  
   // listen for Bluetooth® Low Energy peripherals to connect:
   BLEDevice central = BLE.central();
 
@@ -111,6 +122,12 @@ void loop() {
       Serial.print("Connected to central: ");
     // print the central's MAC address:
     Serial.println(central.address());
+    setCpuFrequencyMhz(240);
+    Freq = getCpuFrequencyMhz();
+    Serial.print("CPU Freq = ");
+    Serial.println(Freq);
+
+   
     
 
     // while the central is still connected to peripheral:
@@ -138,7 +155,20 @@ void loop() {
     
       Serial.print(F("Disconnected from central: "));
     Serial.println(central.address());
+
+    setCpuFrequencyMhz(160);
+    Freq = getCpuFrequencyMhz();
+    Serial.print("CPU Freq = ");
+    Serial.println(Freq);
   }
+
+
+
+  // no device connected
+
+  manageAutoDoor();
+
+  delay(1000);
 }
 
 
