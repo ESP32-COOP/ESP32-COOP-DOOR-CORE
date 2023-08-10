@@ -137,6 +137,7 @@ void loop() {
       delay(500);
 
       manageAutoDoor();
+      manageMotor();
 
       manageDate();
       manageLight();
@@ -167,6 +168,7 @@ void loop() {
   // no device connected
 
   manageAutoDoor();
+  manageMotor();
 
   delay(1000);
 }
@@ -203,6 +205,7 @@ void manageAutoDoor() {
           break;
         case 3:
           openingDoor = isLightAndTimeFulfill;
+          break;
         case 4:
           openingDoor = isLightOrTimeFulfill;
           break;
@@ -263,6 +266,7 @@ void manageAutoDoor() {
           break;
         case 3:
           closingDoor = isLightAndTimeFulfill;
+          break;
         case 4:
           closingDoor = isLightOrTimeFulfill;
           break;
@@ -307,6 +311,44 @@ void manageAutoDoor() {
   }
 }
 
+
+
+void manageMotor() {
+
+      Serial.print("else continue Door : ");
+      Serial.print("current_target : ");
+      Serial.print(current_target);
+      Serial.print("doorWantedStatus : ");
+      Serial.print(doorWantedStatus);
+      Serial.print("doorStatus : ");
+      Serial.println(doorStatus);
+
+
+      if (doorWantedStatus == 0 && doorStatus != doorWantedStatus) {
+      current_target = (int)0;
+      
+      } else if (doorWantedStatus == 1 && doorStatus != doorWantedStatus) {
+        current_target = (int)oneTurn * doorNbTurn;
+        
+      }
+
+      if (doorStatus != doorWantedStatus){
+        runMotor(current_target);
+        doorStatus = doorWantedStatus;
+      }
+
+    
+
+    if (testDoor) {
+      Serial.println("test go back");
+      doorWantedStatus = !doorWantedStatus;
+      testDoor = false;
+    }
+    count++;
+
+  
+  
+}
 
 
 void manageSettingsOpen() {
@@ -378,39 +420,7 @@ void manageSettingsDoor() {
 
       
 
-  } else {
-      Serial.print("else continue Door : ");
-      Serial.print("current_target : ");
-      Serial.print(current_target);
-      Serial.print("doorWantedStatus : ");
-      Serial.print(doorWantedStatus);
-      Serial.print("doorStatus : ");
-      Serial.println(doorStatus);
-
-
-      if (doorWantedStatus == 0 && doorStatus != doorWantedStatus) {
-      current_target = (int)0;
-      
-      } else if (doorWantedStatus == 1 && doorStatus != doorWantedStatus) {
-        current_target = (int)oneTurn * doorNbTurn;
-        
-      }
-
-      if (doorStatus != doorWantedStatus){
-        runMotor(current_target);
-        doorStatus = doorWantedStatus;
-      }
-
-    
-
-    if (testDoor) {
-      Serial.println("test go back");
-      doorWantedStatus = !doorWantedStatus;
-      testDoor = false;
-    }
-    count++;
-
-  }
+  } 
 
   
 }
