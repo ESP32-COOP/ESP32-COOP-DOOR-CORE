@@ -138,9 +138,10 @@ void loop() {
 
       manageAutoDoor();
       manageMotor();
+      manageLight();
 
       manageDate();
-      manageLight();
+      manageLightBLE();
       manageSettingsDoor();
       manageSettingsClose();
       manageSettingsOpen();
@@ -425,10 +426,8 @@ void manageSettingsDoor() {
   
 }
 
-
-
-
 void manageLight() {
+
   analogValue = analogRead(LIGHT);
   Serial.print(F("light origin: "));
       Serial.println(analogValue);
@@ -439,15 +438,22 @@ void manageLight() {
    analogValue = 1000;
     // maximum allowed by the BLE protocol, 1000 is bright above is very bright, not very usefull
   }
+
+  minValue = min(analogValue, minValue);
+  maxValue = max(analogValue, maxValue);
+
+  
+}
+
+
+void manageLightBLE() {
+  
   if (lightCharacteristic.written() && lightCharacteristic.value()[3] != 0x00) {
     minValue = analogValue;
     maxValue = analogValue;
     Serial.println("reset light");
 
-  } else {
-    minValue = min(analogValue, minValue);
-    maxValue = max(analogValue, maxValue);
-  }
+  } 
   /*
     Serial.print(" value ");
     Serial.print(analogValue);
