@@ -3,7 +3,7 @@
 <div align="center">
   <img width=200 src="https://avatars.githubusercontent.com/u/125645342?s=400&u=3b826dc69690dbe5a25e243508bfb29d9a48d8a1&v=4" alt="ESP32-COOP-DOOR Logo">
 
-  # ESP32-COOP-DOOR-CORE
+  # ESP32 COOP DOOD CORE
 
 Coop Door for ESP32 (Lolin32 Lite)
 </div>
