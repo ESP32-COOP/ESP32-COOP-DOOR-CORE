@@ -5,12 +5,12 @@
 
   # ESP32 COOP DOOD CORE
 
-Coop Door for ESP32 (Lolin32 Lite)
+Coop door code for ESP32 (Lolin32 Lite)
 </div>
 
 ## Overview
 
-ESP32-COOP-DOOR-CORE is a open source platform designed to control a coop door using Bluetooth Low Energy (BLE) with an ESP32 microcontroller. The app allows users to set up and adjust the coop door's automatic opening and closing conditions based on ambient brightness and time of day. Users can also configure the number of turns for opening/closing the door and change the door's status (open, close, or auto).
+ESP32 COOP DOOR CORE is a open source platform designed to control a coop door using Bluetooth Low Energy (BLE) with an ESP32 microcontroller. The app allows users to set up and adjust the coop door's automatic opening and closing conditions based on ambient brightness and time of day. Users can also configure the number of turns for opening/closing the door and change the door's status (open, close, or auto).
 
 ## Features
 
@@ -19,19 +19,6 @@ ESP32-COOP-DOOR-CORE is a open source platform designed to control a coop door u
 - Customize closing conditions with similar settings
 - Set the number of turns for door opening/closing
 - Switch between open, close, and auto modes for the door
-
-## Workflow
-
-<div align="center">
-  <img height=400 src="README/sketch.png" alt="Sketch">
-  <img height=400 src="README/result.png" alt="Result">
-</div>
-
-## Demo
-
-<div align="center">
-  <img height=400 src="README/demo.gif" alt="Demo">
-</div>
 
 ## Setup and Usage
 
