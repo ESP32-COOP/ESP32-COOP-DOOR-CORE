@@ -22,6 +22,8 @@ BLECharacteristic lightCharacteristic("947aad02-c25d-11ed-afa1-0242ac120002", BL
 BLECharacteristic doorCharacteristic("c3773399-b755-4e30-9160-bed203fae718", BLERead | BLENotify | BLEWrite, 2);
 BLECharacteristic doorCloseCharacteristic("e011ba0e-84c5-4e83-8648-f3e2660c44b0", BLERead | BLENotify | BLEWrite, 4);
 BLECharacteristic doorOpenCharacteristic("cc959fff-4f84-4d08-a720-9d9156a48ed5", BLERead | BLENotify | BLEWrite, 4);
+BLECharacteristic moreCharacteristic("d2f9b265-a520-4d21-97ec-ce7f9aa78f22", BLERead | BLENotify | BLEWrite, 7); // 1 reset door 0 position 2*2 pid value
+
 
 //badge
 uint8_t ble_value = 0x0;
@@ -55,9 +57,11 @@ int doorOpenTimeM = -1;
 //door controle
 int oneTurn = 372; //372
 int doorStatus = 0;
-float kp = 8;
-float kd = 1;
-float ki = 0.01;
+
+// PID constants
+float kp = 5; // 1 // 5 // 8
+float kd = 0.08; // 0.025 // 0.12
+float ki = 0.0;
 
 void setup() {
   Serial.begin(115200);
@@ -87,14 +91,23 @@ void setup() {
   service.addCharacteristic(doorCharacteristic);
   service.addCharacteristic(doorCloseCharacteristic);
   service.addCharacteristic(doorOpenCharacteristic);
+  service.addCharacteristic(moreCharacteristic);
   BLE.addService(service);
-  dateCharacteristic.writeValue(0);
-  lightCharacteristic.writeValue(0);
+  //dateCharacteristic.writeValue(0);
+  //lightCharacteristic.writeValue(0);
   uint8_t initialValue[] = {
     10,
     0
   };
   doorCharacteristic.writeValue(initialValue, sizeof(initialValue));
+
+  uint8_t initialValueMore[] = {
+    0,
+    8,128-0,
+    1,128-0,
+    1,128-100
+  };
+  moreCharacteristic.writeValue(initialValueMore, sizeof(initialValueMore));
 
   // start advertising
   BLE.advertise();
@@ -333,6 +346,35 @@ void manageMotor() {
 
 }
 
+void manageMoreSettings() {
+  if (moreCharacteristic.written()) {
+
+    Serial.println("update More settings");
+
+    if (moreCharacteristic.value()[0] == 1){
+      uint8_t newValueMore[] = {
+        0,
+        moreCharacteristic.value()[1],moreCharacteristic.value()[2],
+        moreCharacteristic.value()[3],moreCharacteristic.value()[4],
+        moreCharacteristic.value()[5],moreCharacteristic.value()[6],
+      };
+      moreCharacteristic.writeValue(newValueMore, sizeof(newValueMore));
+      posi = 0;
+      Serial.println("reset door 0 position");
+    }
+
+    kp = moreCharacteristic.value()[1] * pow(10,moreCharacteristic.value()[2] - 128);
+    kd = moreCharacteristic.value()[3] * pow(10,moreCharacteristic.value()[4] - 128);
+    ki = moreCharacteristic.value()[5] * pow(10,moreCharacteristic.value()[6] - 128);
+    Serial.print(kd);
+    Serial.print(";");
+    Serial.print(kp);
+    Serial.print(";");
+    Serial.println(ki);
+
+  }
+}
+
 void manageSettingsOpen() {
   if (doorOpenCharacteristic.written()) {
 
@@ -501,10 +543,7 @@ void runMotor(int target) {
   float eintegral = 0;
   int lastPosition = -1;
   int countLastPosition = 0;
-  // PID constants
-  float kp = 5; // 1 // 5 // 8
-  float kd = 0.08; // 0.025 // 0.12
-  float ki = 0.0;
+  
 
   while (true) {
     // Time difference
