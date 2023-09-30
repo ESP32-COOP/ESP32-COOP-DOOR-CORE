@@ -530,8 +530,8 @@ void runMotor(int target) {
   int lastPosition = -1;
   int countLastPosition = 0;
   // PID constants
-  float kp = 8;     // 1 // 5
-  float kd = 0.03;  // 0.025 // 0.12
+  float kp = 2;     // 1 // 5
+  float kd = 0.5;  // 0.025 // 0.12
   float ki = 0.0;
 
   while (true) {
@@ -573,14 +573,17 @@ void runMotor(int target) {
     float u = kp * e + kd * dedt + ki * eintegral;
 
     // Motor power
+    
     float pwr = fabs(u);
+    
     if (pwr > 120) {
       pwr = 120;
     }
-
+    /*
     if (pwr < 50) {
       pwr = 0;
-    }
+    }*/
+    
 
     // Motor direction
     int dir = 1;
