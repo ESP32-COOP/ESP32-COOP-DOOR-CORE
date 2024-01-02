@@ -1,11 +1,12 @@
 #include <ArduinoBLE.h>
 #include <ESP32Time.h>
-#define ENCA 2 // YELLOW from polulu
-#define ENCB 15 // WHITE from polulu
-#define PWM 27
-#define IN2 26 //B1-A
-#define IN1 25 //A1-A
-#define LIGHT 34
+#define ENCA 7 // YELLOW from polulu
+#define ENCB 6 // WHITE from polulu
+#define PWM 5
+#define IN2 2 //B1-A
+#define IN1 3 //A1-A
+#define LIGHT 4
+
 
 volatile int posi = 0;  // specify posi as volatile: https://www.arduino.cc/reference/en/language/variables/variable-scope-qualifiers/volatile/
 
@@ -20,6 +21,7 @@ BLECharacteristic lightCharacteristic("947aad02-c25d-11ed-afa1-0242ac120002", BL
 BLECharacteristic doorCharacteristic("c3773399-b755-4e30-9160-bed203fae718", BLERead | BLENotify | BLEWrite , 2);
 BLECharacteristic doorCloseCharacteristic("e011ba0e-84c5-4e83-8648-f3e2660c44b0", BLERead | BLENotify | BLEWrite , 4);
 BLECharacteristic doorOpenCharacteristic("cc959fff-4f84-4d08-a720-9d9156a48ed5", BLERead | BLENotify | BLEWrite , 4);
+
 
 //badge
 uint8_t ble_value = 0x0;
@@ -59,9 +61,11 @@ float kd = 1;
 float ki = 0.01;
 
 
+
 void setup() {
+  // initialize serial communication at 9600 bits per second:
   Serial.begin(115200);
-  rtc.setTime(1680108200);
+   rtc.setTime(1680108200);
 
   pinMode(ENCA, INPUT);
   pinMode(ENCB, INPUT);
@@ -72,6 +76,7 @@ void setup() {
   pinMode(IN2, OUTPUT);
   while (!Serial);
 
+  
   // begin initialization
   if (!BLE.begin()) {
     
@@ -88,8 +93,8 @@ void setup() {
   service.addCharacteristic(doorCloseCharacteristic);
   service.addCharacteristic(doorOpenCharacteristic);
   BLE.addService(service);
-  dateCharacteristic.writeValue(0);
-  lightCharacteristic.writeValue(0);
+ // dateCharacteristic.writeValue(0);
+//  lightCharacteristic.writeValue(0);
   uint8_t initialValue[] = {10, 0};
   doorCharacteristic.writeValue(initialValue, sizeof(initialValue));
 
@@ -100,18 +105,12 @@ void setup() {
   
       Serial.println("BLE LED Peripheral");
 
-      setCpuFrequencyMhz(160);
-    Freq = getCpuFrequencyMhz();
-    Serial.print("CPU Freq = ");
-    Serial.println(Freq);
-
 
 
 }
 
+// the loop routine runs over and over again forever:
 void loop() {
-
-   
 
   
   // listen for Bluetooth® Low Energy peripherals to connect:
